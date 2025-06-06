@@ -13,13 +13,25 @@ const newAnime = {
   image: "test",
 };
 
+interface Anime {
+  title: string;
+  description: string;
+  year: number;
+  episodes: number;
+  studio: string;
+  rating: number;
+  genre: string;
+  status: string;
+  image: string;
+}
+
 prisma.anime
-  .create({ data: newAnime })
-  .then((anime) => {
+  .create({ data: newAnime as Anime })
+  .then((anime: Anime) => {
     console.log("Success... a new anime was created!!");
     console.log(anime);
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     console.log("Something went wrong...");
     console.error(error);
   });
