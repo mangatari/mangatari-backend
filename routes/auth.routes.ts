@@ -21,9 +21,10 @@ interface LoginRequestBody {
 }
 
 interface JwtPayload {
-  id: number;        // Prisma user id is number
+  id: string;        // Prisma user id is string to match the expected type
   email: string;
   username: string;  // Corrected property name
+  name: string;      // Made mandatory to match the expected type
 }
 
 interface RequestWithPayload extends Request {
@@ -117,9 +118,10 @@ router.post(
       }
 
       const payload: JwtPayload = {
-        id: user.id,
+        id: String(user.id),
         email: user.email,
         username: user.username,
+        name: user.username, // Assuming 'name' can be set to 'username'
       };
 
       const authToken = jwt.sign(
@@ -142,8 +144,9 @@ router.post(
 router.get(
   "/verify",
   isAuthenticated,
-  (req: RequestWithPayload, res: Response) => {
-    res.status(200).json(req.payload);
+  (req: Request, res: Response) => {
+    const request = req as RequestWithPayload;
+    res.status(200).json(request.payload);
   }
 );
 
