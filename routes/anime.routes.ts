@@ -1,12 +1,12 @@
-const express = require('express');
+import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
- 
-const prisma = require('../db/Prisma Client/index');
- 
-//  POST /api/books  -  Creates a new book
-router.post('/books', (req, res, next) => {
+
+import prisma from '../db/index'; 
+
+// Create a new anime
+router.post('/animes', async (req: Request, res: Response, next: NextFunction) => {
   const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
- 
+
   const newAnime = {
     title,
     description,
@@ -14,94 +14,86 @@ router.post('/books', (req, res, next) => {
     episodes,
     studio,
     rating,
-    genre ,
-    status ,
-    image 
-  };
- 
-  prisma.anime
-    .create({ data: newAnime })
-    .then(anime => {
-      console.log('New anime created', anime);
-      res.status(201).json(anime);
-    })
-    .catch(err => {
-      console.log('Error creating new anime', err);
-      res.status(500).json({ message: 'Error creating new anime' });
-    });
-});
- 
-//  GET /api/books -  Retrieves all of the books
-router.get('/animes', (req, res, next) => {
-  prisma.anime
-    .findMany()
-    .then(allanimes => {
-      res.json(allAnimes);
-    })
-    .catch(err => {
-      console.log('Error getting books from DB', err);
-      res.status(500).json({ message: 'Error getting books from DB' });
-    });
-});
- 
-//  GET /api/books/:bookId -  Retrieves a specific book by id
-router.get('/books/:bookId', (req, res, next) => {
-  const { bookId } = req.params;
- 
-  prisma.book
-    .findUnique({ where: { id: bookId } })
-    .then(book => {
-      if (!book) {
-        res.status(404).json({ message: 'Book not found' });
-      } else {
-        res.json(book);
-      }
-    })
-    .catch(err => {
-      console.log('Error getting book from DB', err);
-      res.status(500).json({ message: 'Error getting book from DB' });
-    });
-});
- 
-// PUT  /api/books/:bookId  -  Updates a specific book by id
-router.put('/books/:bookId', (req, res, next) => {
-  const { bookId } = req.params;
- 
-  const { title, year, summary, quantity, genre, authorName } = req.body;
- 
-  const newBookDetails = {
-    title,
-    year,
-    summary,
-    quantity,
     genre,
-    authorName
+    status,
+    image
   };
- 
-  prisma.book
-    .update({ where: { id: bookId }, data: newBookDetails })
-    .then(updatedBook => {
-      res.json(updatedBook);
-    })
-    .catch(err => {
-      console.log('Error updating a book', err);
-      res.status(500).json({ message: 'Error updating a book' });
-    });
+
+  try {
+    const anime = await prisma.anime.create({ data: newAnime });
+    console.log('New anime created', anime);
+    res.status(201).json(anime);
+  } catch (err) {
+    console.error('Error creating new anime', err);
+    res.status(500).json({ message: 'Error creating new anime' });
+  }
 });
- 
-// DELETE  /api/books/:bookId  -  Deletes a specific book by id
-router.delete('/books/:bookId', (req, res, next) => {
-  const { bookId } = req.params;
- 
-  prisma.book
-    .delete({ where: { id: bookId } })
-    .then(() => {
-      res.json({ message: `Book with id ${bookId} was deleted successfully` });
-    })
-    .catch(err => {
-      console.log('Error deleting a book', err);
-      res.status(500).json({ message: 'Error deleting a book' });
-    });
+
+// Retrieve all animes
+router.get('/animes', async (_req: Request, res: Response) => {
+  try {
+    const allAnimes = await prisma.anime.findMany();
+    res.json(allAnimes);
+  } catch (err) {
+    console.error('Error getting animes from DB', err);
+    res.status(500).json({ message: 'Error getting animes from DB' });
+  }
 });
- 
-module.exports = router;
+
+// Retrieve a specific anime by ID
+router.get('/animes/:animeId', async (req: Request, res: Response) => {
+  const animeId = req.params.animeId;
+
+  try {
+    const anime = await prisma.anime.findUnique({ where: { id: animeId } });
+    if (!anime) {
+      res.status(404).json({ message: 'anime not found' });
+    } else {
+      res.json(anime);
+    }
+  } catch (err) {
+    console.error('Error getting anime from DB', err);
+    res.status(500).json({ message: 'Error getting anime from DB' });
+  }
+});
+
+// Update a anime by ID
+router.put('/animes/:animeId', async (req: Request, res: Response) => {
+  const animeId = req.params.animeId;
+  const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
+
+  const newAnimeDetails = {
+    title,
+    description,
+    year,
+    episodes,
+    studio,
+    rating,
+    genre,
+    status,
+    image
+  };
+
+  try {
+    const updatedAnime = await prisma.anime.update({ where: { id: animeId }, data: newAnimeDetails });
+    res.json(updatedAnime);
+  } catch (err) {
+    console.error('Error updating a anime', err);
+    res.status(500).json({ message: 'Error updating a anime' });
+  }
+});
+
+// Delete a anime by ID
+router.delete('/animes/:animeId', async (req: Request, res: Response) => {
+  const animeId = req.params.animeId;
+
+  try {
+    await prisma.anime.delete({ where: { id: animeId } });
+    res.json({ message: `anime with id ${animeId} was deleted successfully` });
+  } catch (err) {
+    console.error('Error deleting a anime', err);
+    res.status(500).json({ message: 'Error deleting a anime' });
+  }
+});
+
+export default router;
