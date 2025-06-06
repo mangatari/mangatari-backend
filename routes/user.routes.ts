@@ -35,12 +35,12 @@ router.get("/my-profile", isAuthenticated, );
 // PUT /users/edit-profile - update name/email/password
 router.put("/edit-profile", isAuthenticated, async (req: Request, res: Response) => {
   const userId = req.payload?.id;
-  const { name, email, password } = req.body;
+  const { userName, email, password } = req.body;
 
   try {
     const updateData: { name?: string; email?: string; password?: string } = {};
 
-    if (name) updateData.name = name;
+    if (userName) updateData.userName = userUname;
     if (email) updateData.email = email;
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
