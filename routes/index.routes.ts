@@ -5,4 +5,3 @@ indexRouter.get('/', (req, res) => {
 });
 
 export default indexRouter;
-module.exports = router

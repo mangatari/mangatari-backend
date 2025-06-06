@@ -1,61 +1,63 @@
-const router = require("express").Router();
+import express, { Request, Response, NextFunction } from "express";
 
-const { isAuthenticated } = require("../jwt.middleware");
-const User = require("../models/User.model");
+// Extend the Request type to include the payload property
+declare global {
+  namespace Express {
+    interface Request {
+      payload?: JwtPayload & { id: string; email: string; name: string };
+    }
+  }
+}
+import bcrypt from "bcrypt";
+import { JwtPayload } from "jsonwebtoken";
+import prisma from "../db";
+import { isAuthenticated } from "../jwt.middleware";
 
-router.get("/users", (req, res, next) => {
-  User.find({})
-    .select("name _id")
-    .then((users) => {
-      console.log("Retrieved users ->", users);
-      res.json(users);
-    })
-    .catch((error) => {
-      console.error("Error while retrieving users ->", error);
-      res.status(500).json({ error: "Failed to retrieve users" });
-    });
-});
+const router = express.Router();
 
-router.get("/users/my-profile", isAuthenticated, (req, res) => {
-  const userId = req.payload._id;
-
-  User.findById(userId)
-    .select("name _id email")
-    .then((user) => {
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      res.status(200).json(user);
-    })
-    .catch((error) => {
-      console.error("Error retrieving user profile:", error);
-      res.status(500).json({ error: "Failed to retrieve the user profile" });
-    });
-});
-
-
-router.put("/users/edit-profile", isAuthenticated, async (req, res) => {
-  const { name, email, password } = req.body;
-
+// GET /users - list all users (basic public info)
+router.get("/", async (req: Request, res: Response) => {
   try {
-    const updatedFields = {};
-    if (name) updatedFields.name = name;
-    if (email) updatedFields.email = email;
-    if (password) updatedFields.password = await bcrypt.hash(password, 10); // only hash if present
-
-    const updatedUser = await User.findByIdAndUpdate(
-     req.payload._id, // ✅ Use `payload` not `user`
-      { $set: updatedFields },
-      { new: true }
-    );
-
-    res.status(200).json(updatedUser);
-  } catch (err) {
-    res.status(500).json({ message: "Error updating user", error: err.message });
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true },
+    });
+    console.log("Retrieved users ->", users);
+    res.json(users);
+  } catch (error) {
+    console.error("Error while retrieving users ->", error);
+    res.status(500).json({ error: "Failed to retrieve users" });
   }
 });
 
+// GET /users/my-profile - get logged-in user's profile
+router.get("/my-profile", isAuthenticated, );
 
+// PUT /users/edit-profile - update name/email/password
+router.put("/edit-profile", isAuthenticated, async (req: Request, res: Response) => {
+  const userId = req.payload?.id;
+  const { name, email, password } = req.body;
 
+  try {
+    const updateData: { name?: string; email?: string; password?: string } = {};
 
-module.exports = router;
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.password = hashedPassword;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: { id: true, name: true, email: true },
+    });
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Error updating user", error: (error as Error).message });
+  }
+});
+
+export default router;

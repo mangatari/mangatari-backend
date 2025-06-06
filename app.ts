@@ -1,5 +1,3 @@
-// app.ts
-
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -13,6 +11,10 @@ config(app);
 // Routes
 import indexRoutes from "./routes/index.routes";
 app.use("/api", indexRoutes);
+
+// Add your auth routes here:
+import authRouter from "./routes/auth.routes";
+app.use("/auth", authRouter);
 
 // Error handling
 import errorHandler from "./error-handling";
