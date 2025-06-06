@@ -27,11 +27,11 @@ interface JwtPayload {
 // POST /auth/signup
 router.post(
   "/signup",
-  async (
-    req: Request<{}, {}, SignupRequestBody>,
-    res: Response,
-    next: NextFunction
-  ) => {
+  async function (
+    req: express.Request<{}, {}, SignupRequestBody>,
+    res: express.Response,
+    next: express.NextFunction
+  ) {
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
