@@ -1,4 +1,4 @@
-// routes/auth.ts
+// routes/auth.routes.ts
 
 import express, { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
@@ -12,7 +12,7 @@ const saltRounds = 10;
 interface SignupRequestBody {
   email: string;
   password: string;
-  name: string;
+  username: string;
 }
 
 interface LoginRequestBody {
@@ -21,10 +21,11 @@ interface LoginRequestBody {
 }
 
 interface JwtPayload {
-  id: string;
+  id: number;        // Prisma user id is number
   email: string;
-  name: string;
+  username: string;  // Corrected property name
 }
+
 interface RequestWithPayload extends Request {
   payload?: JwtPayload;
 }
@@ -37,10 +38,10 @@ router.post(
     res: Response,
     next: NextFunction
   ): Promise<void> => {
-    const { email, password, name } = req.body;
+    const { email, password, username } = req.body;
 
-    if (!email || !password || !name) {
-      res.status(400).json({ message: "Provide email, password and name" });
+    if (!email || !password || !username) {
+      res.status(400).json({ message: "Provide email, password and username" });
       return;
     }
 
@@ -60,7 +61,7 @@ router.post(
     }
 
     try {
-      const foundUser = await prisma.user.findUnique({ where: { email } });
+      const foundUser = await prisma.users.findUnique({ where: { email } });
 
       if (foundUser) {
         res.status(400).json({ message: "User already exists." });
@@ -69,16 +70,16 @@ router.post(
 
       const hashedPassword = bcrypt.hashSync(password, saltRounds);
 
-      const createdUser = await prisma.user.create({
+      const createdUser = await prisma.users.create({
         data: {
           email,
-          name,
+          username,
           password: hashedPassword,
         },
       });
 
       const { id } = createdUser;
-      res.status(201).json({ user: { id, name, email } });
+      res.status(201).json({ user: { id, username, email } });
     } catch (err) {
       next(err);
     }
@@ -101,7 +102,7 @@ router.post(
     }
 
     try {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.users.findUnique({ where: { email } });
 
       if (!user) {
         res.status(401).json({ message: "User not found." });
@@ -118,7 +119,7 @@ router.post(
       const payload: JwtPayload = {
         id: user.id,
         email: user.email,
-        name: user.name,
+        username: user.username,
       };
 
       const authToken = jwt.sign(
