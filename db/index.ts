@@ -15,3 +15,5 @@ main()
   .finally(() => {
     prisma.$disconnect();
   });
+
+  export default prisma;
