@@ -9,13 +9,13 @@ datasource db {
 }
 
 model anime {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   title       String
   description String?
   year        Int?
   episodes    Int?
   studio      String?
-  rating      Decimal? @db.Decimal(2, 1)
+  rating      Int?
   genre       String?
   status      String?
   image       String?
