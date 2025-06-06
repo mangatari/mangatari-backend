@@ -1,7 +1,8 @@
-const router = require('express').Router()
+import { Router } from 'express';
+const indexRouter = Router();
+indexRouter.get('/', (req, res) => {
+  res.json('All good in here');
+});
 
-router.get('/', (req, res) => {
-  res.json('All good in here')
-})
-
+export default indexRouter;
 module.exports = router
