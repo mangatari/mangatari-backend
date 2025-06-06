@@ -4,7 +4,7 @@ import { PrismaClient } from '../generated/prisma';
 const prisma = new PrismaClient();
 
 async function main() {
-  const users = await prisma.user.findMany();
+  const users = await prisma.users.findMany();
   console.log(users);
 }
 
