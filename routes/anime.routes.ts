@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 
-import prisma from '../db/index'; 
+import { prisma } from '../db/index'; 
 
 // Create a new anime
 router.post('/animes', async (req: Request, res: Response, next: NextFunction) => {
