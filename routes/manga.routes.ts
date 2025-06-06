@@ -42,7 +42,7 @@ router.get('/mangas', async (_req: Request, res: Response) => {
 
 // Retrieve a specific manga by ID
 router.get('/mangas/:mangaId', async (req: Request, res: Response) => {
-  const mangaId = req.params.mangaId;
+  const mangaId = parseInt(req.params.mangaId, 10);
 
   try {
     const manga = await prisma.manga.findUnique({ where: { id: mangaId } });
@@ -59,7 +59,7 @@ router.get('/mangas/:mangaId', async (req: Request, res: Response) => {
 
 // Update a manga by ID
 router.put('/mangas/:mangaId', async (req: Request, res: Response) => {
-  const mangaId = req.params.mangaId;
+  const mangaId = parseInt(req.params.mangaId, 10);
   const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
 
   const newMangaDetails = {
@@ -85,7 +85,7 @@ router.put('/mangas/:mangaId', async (req: Request, res: Response) => {
 
 // Delete a manga by ID
 router.delete('/mangas/:mangaId', async (req: Request, res: Response) => {
-  const mangaId = req.params.mangaId;
+  const mangaId = parseInt(req.params.mangaId, 10);
 
   try {
     await prisma.manga.delete({ where: { id: mangaId } });

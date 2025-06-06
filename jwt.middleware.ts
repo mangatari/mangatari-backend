@@ -5,6 +5,7 @@ interface JwtPayload {
   id: string;
   email: string;
   name: string;
+  username: string; // Added username property
 }
 
 export function isAuthenticated(

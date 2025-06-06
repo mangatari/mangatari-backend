@@ -14,15 +14,16 @@ const newAnime = {
 };
 
 interface Anime {
+  id: number;
   title: string;
-  description: string;
-  year: number;
-  episodes: number;
-  studio: string;
-  rating: number;
-  genre: string;
-  status: string;
-  image: string;
+  description: string | null;
+  year: number | null;
+  episodes: number | null;
+  studio: string | null;
+  rating: number | null;
+  genre: string | null;
+  status: string | null;
+  image: string | null;
 }
 
 prisma.anime

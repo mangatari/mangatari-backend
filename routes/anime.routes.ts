@@ -45,7 +45,7 @@ router.get('/animes/:animeId', async (req: Request, res: Response) => {
   const animeId = req.params.animeId;
 
   try {
-    const anime = await prisma.anime.findUnique({ where: { id: animeId } });
+    const anime = await prisma.anime.findUnique({ where: { id: parseInt(animeId, 10) } });
     if (!anime) {
       res.status(404).json({ message: 'anime not found' });
     } else {
@@ -59,7 +59,7 @@ router.get('/animes/:animeId', async (req: Request, res: Response) => {
 
 // Update a anime by ID
 router.put('/animes/:animeId', async (req: Request, res: Response) => {
-  const animeId = req.params.animeId;
+  const animeId = parseInt(req.params.animeId, 10);
   const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
 
   const newAnimeDetails = {
@@ -88,7 +88,7 @@ router.delete('/animes/:animeId', async (req: Request, res: Response) => {
   const animeId = req.params.animeId;
 
   try {
-    await prisma.anime.delete({ where: { id: animeId } });
+    await prisma.anime.delete({ where: { id: parseInt(animeId, 10) } });
     res.json({ message: `anime with id ${animeId} was deleted successfully` });
   } catch (err) {
     console.error('Error deleting a anime', err);
