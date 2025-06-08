@@ -26,15 +26,11 @@ import authRouter from "./routes/auth.routes";
 app.use("/api", animeRoutes);
 app.use("/api", indexRoutes);
 app.use("/auth", authRouter);
-<<<<<<< HEAD
-
-// Error handler comes last
-=======
 app.use("/api", require("./routes/user.routes"));
 app.use("/api", require("./routes/anime.routes"));
 app.use("/api", require("./routes/manga.routes"));
+
 // Error handling
->>>>>>> e42dd59 (fix: add user, anime, and manga routes to the API)
 import errorHandler from "./error-handling";
 errorHandler(app);
 
