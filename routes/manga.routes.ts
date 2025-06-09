@@ -60,19 +60,20 @@ router.get('/mangas/:mangaId', async (req: Request, res: Response) => {
 // Update a manga by ID
 router.put('/mangas/:mangaId', async (req: Request, res: Response) => {
   const mangaId = parseInt(req.params.mangaId, 10);
-  const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
+  const { title, description, year, volumes, chapters, author, rating, genre, status, image } = req.body;
 
-  const newMangaDetails = {
-    title,
-    description,
-    year,
-    episodes,
-    studio,
-    rating,
-    genre,
-    status,
-    image
-  };
+const newMangaDetails = {
+  title,
+  description,
+  year,
+  volumes,
+  chapters,
+  author,
+  rating,
+  genre,
+  status,
+  image
+};
 
   try {
     const updatedManga = await prisma.manga.update({ where: { id: mangaId }, data: newMangaDetails });

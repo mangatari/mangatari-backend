@@ -20,18 +20,18 @@ model anime {
   image       String?
 }
 
-model manga {
-  id          Int      @id @default(autoincrement())
+model Manga {
+  id          Int     @id @default(autoincrement())
   title       String
-  description String?
-  year        Int?
-  volumes     Int?
-  chapters    Int?
-  author      String?
-  rating      Decimal? @db.Decimal(2, 1)
-  genre       String?
-  status      String?
-  image       String?
+  description String
+  year        Int
+  volumes     Int
+  chapters    Int
+  author      String
+  rating      Decimal
+  genre       String
+  status      String
+  image       String
 }
 
 model users {
