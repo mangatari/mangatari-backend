@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 
+import multer from "multer";
+const upload = multer({ dest: "uploads/" });
 import prisma from '../db/index'; 
 
 // Create a new anime
@@ -58,30 +60,41 @@ router.get('/animes/:animeId', async (req: Request, res: Response) => {
 });
 
 // Update a anime by ID
-router.put('/animes/:animeId', async (req: Request, res: Response) => {
-  const animeId = parseInt(req.params.animeId, 10);
-  const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
+router.put(
+  "/animes/:animeId",
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+    const animeId = parseInt(req.params.animeId, 10);
 
-  const newAnimeDetails = {
-    title,
-    description,
-    year,
-    episodes,
-    studio,
-    rating,
-    genre,
-    status,
-    image
-  };
+    // req.body agora vem como strings (mesmo para números), então converta:
+    const { title, year, episodes, description, studio, rating, status, genre } = req.body;
 
-  try {
-    const updatedAnime = await prisma.anime.update({ where: { id: animeId }, data: newAnimeDetails });
-    res.json(updatedAnime);
-  } catch (err) {
-    console.error('Error updating a anime', err);
-    res.status(500).json({ message: 'Error updating a anime' });
+    const imagePath = req.file ? req.file.path : undefined;
+
+    const updatedAnime = {
+      title,
+      description,
+      year: parseInt(year),
+      episodes: parseInt(episodes),
+      studio,
+      rating: parseInt(rating),
+      genre,
+      status,
+      image: imagePath, // atualize o path da imagem se houver upload
+    };
+
+    try {
+      const anime = await prisma.anime.update({
+        where: { id: animeId },
+        data: updatedAnime,
+      });
+      res.json(anime);
+    } catch (err) {
+      console.error("Error updating anime", err);
+      res.status(500).json({ message: "Error updating anime" });
+    }
   }
-});
+);
 
 // Delete a anime by ID
 router.delete('/animes/:animeId', async (req: Request, res: Response) => {
