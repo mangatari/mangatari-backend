@@ -1,33 +1,43 @@
 import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
+import multer from 'multer';
+const upload = multer({ dest: 'uploads/' });
 
-import prisma from '../db/index'; 
+import prisma from '../db/index';
 
 // Create a new manga
-router.post('/mangas', async (req: Request, res: Response, next: NextFunction) => {
-  const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
+router.post(
+  '/mangas',
+  upload.single('image'), 
+  async (req: Request, res: Response, next: NextFunction) => {
+    console.log("Received POST body:", req.body);
+    console.log("Received file:", req.file);
 
-  const newManga = {
-    title,
-    description,
-    year,
-    episodes,
-    studio,
-    rating,
-    genre,
-    status,
-    image
-  };
+    const { title, year, episodes, description, studio, rating, status, genre } = req.body;
+    const imageFilename = req.file?.filename;
 
-  try {
-    const manga = await prisma.manga.create({ data: newManga });
-    console.log('New manga created', manga);
-    res.status(201).json(manga);
-  } catch (err) {
-    console.error('Error creating new manga', err);
-    res.status(500).json({ message: 'Error creating new manga' });
+    const newManga = {
+      title,
+      description,
+      year: year ? Number(year) : undefined,
+      episodes: episodes ? Number(episodes) : undefined,
+      studio,
+      rating: rating ? Number(rating) : undefined,
+      genre,
+      status,
+      image: imageFilename,
+    };
+
+    try {
+      const manga = await prisma.manga.create({ data: newManga });
+      console.log('New manga created', manga);
+      res.status(201).json(manga);
+    } catch (err) {
+      console.error('Error creating new manga', err);
+      res.status(500).json({ message: 'Error creating new manga' });
+    }
   }
-});
+);
 
 // Retrieve all mangas
 router.get('/mangas', async (_req: Request, res: Response) => {
