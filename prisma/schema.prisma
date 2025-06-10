@@ -25,14 +25,14 @@ model Manga {
   id          Int     @id @default(autoincrement())
   title       String
   description String
-  year        Int
-  volumes     Int
-  chapters    Int
-  author      String
-  rating      Decimal
+  year        Int?
+  volumes     Int?
+  chapters    Int?
+  author      String?
+  rating      Decimal?
   genre       String
   status      String
-  image       String
+  image       String?
 }
 
 model users {
