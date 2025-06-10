@@ -36,3 +36,18 @@ prisma.anime
     console.log("Something went wrong...");
     console.error(error);
   });
+// Run a one-time migration to fix existing paths
+(async () => {
+  await prisma.anime.updateMany({
+    where: {
+      image: {
+        startsWith: '/uploads/'
+      }
+    },
+    data: {
+      image: {
+        set: await prisma.$queryRaw`regexp_replace(image, '^/uploads/', '')`
+      }
+    }
+  });
+})();

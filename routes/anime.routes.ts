@@ -66,10 +66,12 @@ router.put(
   async (req: Request, res: Response) => {
     const animeId = parseInt(req.params.animeId, 10);
 
-    // req.body agora vem como strings (mesmo para números), então converta:
-    const { title, year, episodes, description, studio, rating, status, genre } = req.body;
+    // Get existing anime first to preserve existing image if no new one uploaded
+    const existingAnime = await prisma.anime.findUnique({
+      where: { id: animeId }
+    });
 
-    const imagePath = req.file ? req.file.path : undefined;
+    const { title, year, episodes, description, studio, rating, status, genre } = req.body;
 
     const updatedAnime = {
       title,
@@ -80,7 +82,9 @@ router.put(
       rating: parseInt(rating),
       genre,
       status,
-      image: imagePath, // atualize o path da imagem se houver upload
+      // Only update image if a new file was uploaded
+      image: req.file ? `uploads/${req.file.filename}` : existingAnime?.image
+
     };
 
     try {

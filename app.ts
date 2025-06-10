@@ -3,6 +3,7 @@ dotenv.config();
 
 import express, { Application } from "express";
 import cors from "cors";
+import path from "path"; // Import path module
 const app: Application = express();
 
 // CORS must come before routes
@@ -12,6 +13,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use('/uploads', express.static('uploads'));
 
 // Body parser (from config)
 import config from "./config";
