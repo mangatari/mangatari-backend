@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r ./generated dist/generated",
+    "postinstall": "prisma generate --no -engine",
     "start": "ts-node server.ts",
     "dev": "ts-node-dev --respawn server.ts"
   },
