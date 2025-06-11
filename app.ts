@@ -23,7 +23,7 @@ config(app);
     
 
 // Routes
-import animeRoutes from "./routes/anime.routes";
+import animeRoutes from './routes/anime.routes';
 import indexRoutes from "./routes/index.routes";
 import authRouter from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";     
@@ -31,7 +31,7 @@ import mangaRoutes from "./routes/manga.routes";
 
 app.use(express.json());
 
-app.use("/api", animeRoutes);
+app.use('/api', animeRoutes);
 app.use("/api", indexRoutes);
 app.use("/auth", authRouter);
 app.use("/api", userRoutes);     

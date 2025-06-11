@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
-
 import prisma from '../db/index';
 
 // Create a new manga
@@ -13,19 +12,20 @@ router.post(
     console.log("Received POST body:", req.body);
     console.log("Received file:", req.file);
 
-    const { title, year, episodes, description, studio, rating, status, genre } = req.body;
+    const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
     const imageFilename = req.file?.filename;
 
     const newManga = {
       title,
       description,
-      year: year ? Number(year) : undefined,
-      episodes: episodes ? Number(episodes) : undefined,
-      studio,
-      rating: rating ? Number(rating) : undefined,
+      year: year ? Number(year) : null,
+      volumes: volumes ? Number(volumes) : null,
+      chapters: chapters ? Number(chapters) : null,
+      author,
+      rating: rating ? Number(rating) : null,
       genre,
       status,
-      image: imageFilename,
+      image: imageFilename ? `/uploads/${imageFilename}` : null,
     };
 
     try {
@@ -68,31 +68,50 @@ router.get('/mangas/:mangaId', async (req: Request, res: Response) => {
 });
 
 // Update a manga by ID
-router.put('/mangas/:mangaId', async (req: Request, res: Response) => {
-  const mangaId = parseInt(req.params.mangaId, 10);
-  const { title, description, year, volumes, chapters, author, rating, genre, status, image } = req.body;
+router.put(
+  "/mangas/:mangaId",
+  upload.single("image"),
+  async (req: Request, res: Response): Promise<void> => {
+    const mangaId = parseInt(req.params.mangaId, 10);
 
-const newMangaDetails = {
-  title,
-  description,
-  year,
-  volumes,
-  chapters,
-  author,
-  rating,
-  genre,
-  status,
-  image
-};
+    // Get existing manga first to preserve existing image if no new one uploaded
+    const existingManga = await prisma.manga.findUnique({
+      where: { id: mangaId }
+    });
 
-  try {
-    const updatedManga = await prisma.manga.update({ where: { id: mangaId }, data: newMangaDetails });
-    res.json(updatedManga);
-  } catch (err) {
-    console.error('Error updating a manga', err);
-    res.status(500).json({ message: 'Error updating a manga' });
+    if (!existingManga) {
+      res.status(404).json({ message: 'Manga not found' });
+      return;
+    }
+
+    const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
+
+    const updatedManga = {
+      title,
+      description,
+      year: year ? parseInt(year) : existingManga.year,
+      volumes: volumes ? parseInt(volumes) : existingManga.volumes,
+      chapters: chapters ? parseInt(chapters) : existingManga.chapters,
+      author,
+      rating: rating ? parseInt(rating) : existingManga.rating,
+      genre,
+      status,
+      // Only update image if a new file was uploaded
+      image: req.file ? `/uploads/${req.file.filename}` : existingManga.image
+    };
+
+    try {
+      const manga = await prisma.manga.update({
+        where: { id: mangaId },
+        data: updatedManga,
+      });
+      res.json(manga);
+    } catch (err) {
+      console.error("Error updating manga", err);
+      res.status(500).json({ message: "Error updating manga" });
+    }
   }
-});
+);
 
 // Delete a manga by ID
 router.delete('/mangas/:mangaId', async (req: Request, res: Response) => {

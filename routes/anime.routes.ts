@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 const router = express.Router();
 
 import multer from "multer";
@@ -6,30 +7,34 @@ const upload = multer({ dest: "uploads/" });
 import prisma from '../db/index'; 
 
 // Create a new anime
-router.post('/animes', async (req: Request, res: Response, next: NextFunction) => {
-  const { title, year, episodes, description, studio, rating, status, genre, image } = req.body;
+router.post(
+  '/animes',
+  upload.single('image'),
+  async (req: Request, res: Response) => {
+    try {
+      const { title, year, episodes, description, studio, rating, status, genre } = req.body;
+      const imageFilename = req.file?.filename;
 
-  const newAnime = {
-    title,
-    description,
-    year,
-    episodes,
-    studio,
-    rating,
-    genre,
-    status,
-    image
-  };
+      const newAnime = {
+        title,
+        description: description || null,
+        year: year ? parseInt(year) : null,
+        episodes: episodes ? parseInt(episodes) : null,
+        studio: studio || null,
+        rating: rating ? parseInt(rating) : null,
+        genre: genre || null,
+        status: status || null,
+        image: imageFilename ? `/uploads/${imageFilename}` : null
+      };
 
-  try {
-    const anime = await prisma.anime.create({ data: newAnime });
-    console.log('New anime created', anime);
-    res.status(201).json(anime);
-  } catch (err) {
-    console.error('Error creating new anime', err);
-    res.status(500).json({ message: 'Error creating new anime' });
+      const anime = await prisma.anime.create({ data: newAnime });
+      res.status(201).json(anime);
+    } catch (err) {
+      console.error('Error creating new anime', err);
+      res.status(500).json({ message: 'Error creating new anime' });
+    }
   }
-});
+);
 
 // Retrieve all animes
 router.get('/animes', async (_req: Request, res: Response) => {
@@ -83,7 +88,7 @@ router.put(
       genre,
       status,
       // Only update image if a new file was uploaded
-      image: req.file ? `uploads/${req.file.filename}` : existingAnime?.image
+      image: req.file ? `/uploads/${req.file.filename}` : existingAnime?.image
 
     };
 
