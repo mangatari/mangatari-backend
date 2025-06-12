@@ -8,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model anime {
+model Anime {
   id          Int     @id @default(autoincrement())
   title       String
   description String?
@@ -21,7 +21,21 @@ model anime {
   image       String?
 }
 
-model users {
+model Manga {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  year        Int?
+  volumes     Int?
+  chapters    Int?
+  author      String?
+  rating      Decimal?
+  genre       String
+  status      String
+  image       String?
+}
+
+model Users {
   id       Int     @id @default(autoincrement())
   username String  @unique
   email    String  @unique
