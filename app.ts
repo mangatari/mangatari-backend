@@ -2,17 +2,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { Application } from "express";
-import cors from "cors";
 import path from "path"; // Import path module
 const app: Application = express();
 
 // CORS must come before routes
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+
 
 app.use('/uploads', express.static('uploads'));
 
@@ -20,6 +14,12 @@ app.use('/uploads', express.static('uploads'));
 import config from "./config";
 config(app);
 
+app.use((req,res,next) => {
+    res.header("Access-Control-Allow-Origin", "*")
+    res.header("Access-Control-Allow-Methods", "*")
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+    next()
+})
     
 
 // Routes
