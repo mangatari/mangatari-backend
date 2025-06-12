@@ -89,4 +89,50 @@ router.get('/manga/:userId', async (req: Request, res: Response) => {
   }
 });
 
+// Remove favorite anime
+router.delete("/anime/:userId/:animeId", async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.userId);
+  const animeId = parseInt(req.params.animeId);
+
+  try {
+    const deleted = await prisma.userAnime.deleteMany({
+      where: { userId, animeId },
+    });
+
+    if (deleted.count === 0) {
+      res.status(404).json({ message: "Favorite anime not found" });
+      return;
+    }
+
+    res.json({ message: "Anime removed from favorites" });
+    return;
+  } catch (err) {
+    console.error("Error removing anime from favorites:", err);
+    res.status(500).json({ message: "Error removing anime from favorites" });
+    return;
+  }
+});
+
+// Remove favorite manga
+router.delete("/manga/:userId/:mangaId", async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.userId);
+  const mangaId = parseInt(req.params.mangaId);
+
+  try {
+    const deleted = await prisma.userManga.deleteMany({
+      where: { userId, mangaId },
+    });
+
+    if (deleted.count === 0) {
+      res.status(404).json({ message: "Favorite manga not found" });
+      return;
+    }
+
+    res.json({ message: "Manga removed from favorites" });
+  } catch (err) {
+    console.error("Error removing manga from favorites:", err);
+    res.status(500).json({ message: "Error removing manga from favorites" });
+  }
+});
+
 export default router;
