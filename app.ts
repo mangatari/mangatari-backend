@@ -3,6 +3,7 @@ dotenv.config();
 
 import express, { Application } from "express";
 import path from "path"; // Import path module
+import favoritesRoutes from './routes/favorites.routes';
 const app: Application = express();
 
 // CORS must come before routes
@@ -35,7 +36,7 @@ app.use("/api", indexRoutes);
 app.use("/auth", authRouter);
 app.use("/api", userRoutes);     
 app.use("/api", mangaRoutes);
-
+app.use('/api/favorites', favoritesRoutes);
 
 // Error handling
 import errorHandler from "./error-handling";

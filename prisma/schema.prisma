@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Anime {
-  id          Int     @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   title       String
   description String?
   year        Int?
@@ -19,10 +19,12 @@ model Anime {
   genre       String?
   status      String?
   image       String?
+
+  favorites   UserAnime[]  // 👈 fixed
 }
 
 model Manga {
-  id          Int      @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   title       String
   description String
   year        Int?
@@ -33,26 +35,34 @@ model Manga {
   genre       String
   status      String
   image       String?
+
+  favorites   UserManga[]  // 👈 fixed
 }
 
 model Users {
-  id       Int     @id @default(autoincrement())
-  username String  @unique
-  email    String  @unique
-  password String
-  avatar   String?
+  id         Int          @id @default(autoincrement())
+  username   String       @unique
+  email      String       @unique
+  password   String
+  avatar     String?
+
+  favoriteAnimes UserAnime[] // 👈 fixed
+  favoriteMangas UserManga[] // 👈 fixed
 }
 
-model manga {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  year        Int?
-  volumes     Int?
-  chapters    Int?
-  author      String?
-  rating      Decimal? @db.Decimal(2, 1)
-  genre       String?
-  status      String?
-  image       String?
+model UserAnime {
+  id      Int   @id @default(autoincrement())
+  user    Users @relation(fields: [userId], references: [id])
+  userId  Int
+  anime   Anime @relation(fields: [animeId], references: [id])
+  animeId Int
 }
+
+model UserManga {
+  id      Int   @id @default(autoincrement())
+  user    Users @relation(fields: [userId], references: [id])
+  userId  Int
+  manga   Manga @relation(fields: [mangaId], references: [id])
+  mangaId Int
+}
+
