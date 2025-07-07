@@ -8,6 +8,15 @@ import prisma from '../db/index';
 
 import { createClient } from '@supabase/supabase-js';
 
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+  throw new Error(
+    `Supabase credentials missing! 
+     SUPABASE_URL: ${process.env.SUPABASE_URL ? 'set' : 'missing'}
+     SUPABASE_KEY: ${process.env.SUPABASE_KEY ? 'set' : 'missing'}`
+  );
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_KEY!
@@ -17,6 +26,10 @@ const supabase = createClient(
 router.post('/animes', async (req: Request, res: Response) => {
   try {
     const { title, year, episodes, description, studio, rating, status, genre, imageUrl } = req.body;
+
+    if (imageUrl && !imageUrl.includes(process.env.SUPABASE_URL!)) {
+       res.status(400).json({ message: 'Invalid image URL' });
+    }
 
     const newAnime = {
       title,
