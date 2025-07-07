@@ -6,35 +6,37 @@ import multer from "multer";
 const upload = multer({ dest: "uploads/" });
 import prisma from '../db/index'; 
 
-// Create a new anime
-router.post(
-  '/animes',
-  upload.single('image'),
-  async (req: Request, res: Response) => {
-    try {
-      const { title, year, episodes, description, studio, rating, status, genre } = req.body;
-      const imageFilename = req.file?.filename;
+import { createClient } from '@supabase/supabase-js';
 
-      const newAnime = {
-        title,
-        description: description || null,
-        year: year ? parseInt(year) : null,
-        episodes: episodes ? parseInt(episodes) : null,
-        studio: studio || null,
-        rating: rating ? parseInt(rating) : null,
-        genre: genre || null,
-        status: status || null,
-        image: imageFilename ? `/uploads/${imageFilename}` : null
-      };
-
-      const anime = await prisma.anime.create({ data: newAnime });
-      res.status(201).json(anime);
-    } catch (err) {
-      console.error('Error creating new anime', err);
-      res.status(500).json({ message: 'Error creating new anime' });
-    }
-  }
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!
 );
+
+// Create a new anime
+router.post('/animes', async (req: Request, res: Response) => {
+  try {
+    const { title, year, episodes, description, studio, rating, status, genre, imageUrl } = req.body;
+
+    const newAnime = {
+      title,
+      description: description || null,
+      year: year ? parseInt(year) : null,
+      episodes: episodes ? parseInt(episodes) : null,
+      studio: studio || null,
+      rating: rating ? parseInt(rating) : null,
+      genre: genre || null,
+      status: status || null,
+      image: imageUrl || null  // Expect frontend to upload image first
+    };
+
+    const anime = await prisma.anime.create({ data: newAnime });
+    res.status(201).json(anime);
+  } catch (err) {
+    console.error('Error creating anime', err);
+    res.status(500).json({ message: 'Error creating anime' });
+  }
+});
 
 // Retrieve all animes
 router.get('/animes', async (_req: Request, res: Response) => {
