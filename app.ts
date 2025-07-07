@@ -4,7 +4,23 @@ dotenv.config();
 import express, { Application } from "express";
 import path from "path"; // Import path module
 import favoritesRoutes from './routes/favorites.routes';
+
+dotenv.config({ path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env' });
+
+// 2. Verify environment variables immediately
+console.log('Environment check:', {
+  supabaseUrl: process.env.SUPABASE_URL ? 'exists' : 'missing',
+  nodeEnv: process.env.NODE_ENV
+});
+
 const app: Application = express();
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'running',
+    supabaseConfigured: !!process.env.SUPABASE_URL
+  });
+});
 
 // CORS must come before routes
 
