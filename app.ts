@@ -15,6 +15,33 @@ console.log('Environment check:', {
 
 const app: Application = express();
 
+
+const allowedOrigins = [
+  'https://mangatari-new.netlify.app', // Your Netlify frontend
+  'http://localhost:5173'              // Local dev server
+];
+
+import { Request, Response, NextFunction } from "express";
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.headers.origin || '';
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+     res.sendStatus(200);
+     return;
+  }
+  
+  next();
+});
+
+
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'running',
