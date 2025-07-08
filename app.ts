@@ -45,7 +45,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'running',
-    supabaseConfigured: !!process.env.SUPABASE_URL
+    supabaseConfigured: !!process.env.SUPABASE_URL,
+    timestamp: new Date().toISOString()
   });
 });
 
