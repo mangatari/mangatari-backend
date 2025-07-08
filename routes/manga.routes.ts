@@ -1,71 +1,26 @@
 import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
-import multer from 'multer';
-const upload = multer({ dest: 'uploads/' });
 import prisma from '../db/index';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-  throw new Error(
-    `Supabase credentials missing! 
-     SUPABASE_URL: ${process.env.SUPABASE_URL ? 'set' : 'missing'}
-     SUPABASE_KEY: ${process.env.SUPABASE_KEY ? 'set' : 'missing'}`
-  );
-}
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
 
 // Create a new manga
 router.post(
   '/mangas',
-  upload.single('image'), 
   async (req: Request, res: Response, next: NextFunction) => {
     console.log("Received POST body:", req.body);
-    console.log("Received file:", req.file);
 
-    const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
-    let imageUrl = null;
-
-    // Handle image upload if present
-    if (req.file) {
-      const file = req.file;
-      const fileExt = file.originalname.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('manga-pics')
-        .upload(fileName, file.buffer, {
-          contentType: file.mimetype
-        });
-
-      if (error) {
-        console.error('Supabase upload error:', error);
-        res.status(500).json({ message: 'Image upload failed' });
-        return;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('manga-pics')
-        .getPublicUrl(data.path);
-
-      imageUrl = publicUrl;
-    }
+    const { title, year, volumes, chapters, description, author, rating, status, genre, imageUrl } = req.body;
 
     const newManga = {
       title,
-      description: description || null,
+      description,
       year: year ? Number(year) : null,
       volumes: volumes ? Number(volumes) : null,
       chapters: chapters ? Number(chapters) : null,
-      author: author || null,
+      author,
       rating: rating ? Number(rating) : null,
-      genre: genre || null,
-      status: status || null,
-      image: imageUrl
+      genre,
+      status,
+      image: imageUrl || null,
     };
 
     try {
@@ -78,29 +33,6 @@ router.post(
     }
   }
 );
-
-router.post('/mangas', async (req: Request, res: Response) => {
-  try {
-    const { title, description, year, volumes, chapters, 
-            author, rating, genre, status, imageUrl } = req.body;
-
-    const newManga = {
-      title,
-      description: description || null,
-      year: year ? Number(year) : null,
-      // ... other fields
-      image: imageUrl, // Store the full Supabase URL directly
-      genre: genre || null,
-      status: status || null
-    };
-
-    const manga = await prisma.manga.create({ data: newManga });
-    res.status(201).json(manga);
-  } catch (err) {
-    console.error('Error creating manga:', err);
-    res.status(500).json({ message: 'Error creating manga' });
-  }
-});
 
 // Retrieve all mangas
 router.get('/mangas', async (_req: Request, res: Response) => {
@@ -133,57 +65,36 @@ router.get('/mangas/:mangaId', async (req: Request, res: Response) => {
 // Update a manga by ID
 router.put(
   "/mangas/:mangaId",
-  upload.single("image"),
   async (req: Request, res: Response): Promise<void> => {
     const mangaId = parseInt(req.params.mangaId, 10);
 
+    // Get existing manga first to preserve existing image if no new one provided
+    const existingManga = await prisma.manga.findUnique({
+      where: { id: mangaId }
+    });
+
+    if (!existingManga) {
+      res.status(404).json({ message: 'Manga not found' });
+      return;
+    }
+
+    const { title, year, volumes, chapters, description, author, rating, status, genre, imageUrl } = req.body;
+
+    const updatedManga = {
+      title,
+      description,
+      year: year ? parseInt(year) : existingManga.year,
+      volumes: volumes ? parseInt(volumes) : existingManga.volumes,
+      chapters: chapters ? parseInt(chapters) : existingManga.chapters,
+      author,
+      rating: rating ? parseInt(rating) : existingManga.rating,
+      genre,
+      status,
+      // Use new image URL if provided, otherwise keep existing
+      image: imageUrl || existingManga.image
+    };
+
     try {
-      const existingManga = await prisma.manga.findUnique({
-        where: { id: mangaId }
-      });
-
-      if (!existingManga) {
-        res.status(404).json({ message: 'Manga not found' });
-        return;
-      }
-
-      const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
-      let imageUrl = existingManga.image;
-
-      // Handle new image upload if present
-      if (req.file) {
-        const file = req.file;
-        const fileExt = file.originalname.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        
-        const { data, error } = await supabase.storage
-          .from('manga-pics')
-          .upload(fileName, file.buffer, {
-            contentType: file.mimetype
-          });
-
-        if (error) throw error;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('manga-pics')
-          .getPublicUrl(data.path);
-
-        imageUrl = publicUrl;
-      }
-
-      const updatedManga = {
-        title: title || existingManga.title,
-        description: description || existingManga.description,
-        year: year ? parseInt(year) : existingManga.year,
-        volumes: volumes ? parseInt(volumes) : existingManga.volumes,
-        chapters: chapters ? parseInt(chapters) : existingManga.chapters,
-        author: author || existingManga.author,
-        rating: rating ? parseInt(rating) : existingManga.rating,
-        genre: genre || existingManga.genre,
-        status: status || existingManga.status,
-        image: imageUrl
-      };
-
       const manga = await prisma.manga.update({
         where: { id: mangaId },
         data: updatedManga,
