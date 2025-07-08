@@ -1,14 +1,19 @@
 import express, { Request, Response, NextFunction } from 'express';
 const router = express.Router();
+import multer from 'multer';
+const upload = multer({ dest: 'uploads/' });
 import prisma from '../db/index';
 
 // Create a new manga
 router.post(
   '/mangas',
+  upload.single('image'), 
   async (req: Request, res: Response, next: NextFunction) => {
     console.log("Received POST body:", req.body);
+    console.log("Received file:", req.file);
 
-    const { title, year, volumes, chapters, description, author, rating, status, genre, imageUrl } = req.body;
+    const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
+    const imageFilename = req.file?.filename;
 
     const newManga = {
       title,
@@ -20,7 +25,7 @@ router.post(
       rating: rating ? Number(rating) : null,
       genre,
       status,
-      image: imageUrl || null,
+      image: imageFilename ? `/uploads/${imageFilename}` : null,
     };
 
     try {
@@ -65,10 +70,11 @@ router.get('/mangas/:mangaId', async (req: Request, res: Response) => {
 // Update a manga by ID
 router.put(
   "/mangas/:mangaId",
+  upload.single("image"),
   async (req: Request, res: Response): Promise<void> => {
     const mangaId = parseInt(req.params.mangaId, 10);
 
-    // Get existing manga first to preserve existing image if no new one provided
+    // Get existing manga first to preserve existing image if no new one uploaded
     const existingManga = await prisma.manga.findUnique({
       where: { id: mangaId }
     });
@@ -78,7 +84,7 @@ router.put(
       return;
     }
 
-    const { title, year, volumes, chapters, description, author, rating, status, genre, imageUrl } = req.body;
+    const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
 
     const updatedManga = {
       title,
@@ -90,8 +96,8 @@ router.put(
       rating: rating ? parseInt(rating) : existingManga.rating,
       genre,
       status,
-      // Use new image URL if provided, otherwise keep existing
-      image: imageUrl || existingManga.image
+      // Only update image if a new file was uploaded
+      image: req.file ? `/uploads/${req.file.filename}` : existingManga.image
     };
 
     try {

@@ -116,28 +116,53 @@ router.get('/animes/:animeId', async (req: Request, res: Response) => {
 router.put(
   "/animes/:animeId",
   upload.single("image"),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     const animeId = parseInt(req.params.animeId, 10);
-
-    // Get existing anime first to preserve existing image if no new one uploaded
     const existingAnime = await prisma.anime.findUnique({
       where: { id: animeId }
     });
+
+    let imageUrl = existingAnime?.image || null;
+
+    // Handle new image upload
+    if (req.file) {
+      try {
+        const file = req.file;
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        
+        const { data, error } = await supabase.storage
+          .from('anime-pics')
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype
+          });
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('anime-pics')
+          .getPublicUrl(data.path);
+
+        imageUrl = publicUrl;
+      } catch (err) {
+        console.error('Upload error:', err);
+        res.status(500).json({ message: 'Image upload failed' });
+        return;
+      }
+    }
 
     const { title, year, episodes, description, studio, rating, status, genre } = req.body;
 
     const updatedAnime = {
       title,
       description,
-      year: parseInt(year),
-      episodes: parseInt(episodes),
+      year: year ? parseInt(year) : null,
+      episodes: episodes ? parseInt(episodes) : null,
       studio,
-      rating: parseInt(rating),
+      rating: rating ? parseInt(rating) : null,
       genre,
       status,
-      // Only update image if a new file was uploaded
-      image: req.file ? `/uploads/${req.file.filename}` : existingAnime?.image
-
+      image: imageUrl
     };
 
     try {
