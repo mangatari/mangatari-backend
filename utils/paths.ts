@@ -1,4 +1,4 @@
-// utils/paths.ts
+/*// utils/paths.ts
 export function normalizeImagePath(path: string) {
     return path.replace(/^\/?uploads\//, 'uploads/');
   }
