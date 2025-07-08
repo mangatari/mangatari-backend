@@ -79,34 +79,26 @@ router.post(
   }
 );
 
-// Image upload endpoint
-router.post('/mangas/upload', upload.single('image'), async (req: Request, res: Response) => {
+router.post('/mangas', async (req: Request, res: Response) => {
   try {
-    if (!req.file) {
-      res.status(400).json({ message: 'No file uploaded' });
-      return;
-    }
+    const { title, description, year, volumes, chapters, 
+            author, rating, genre, status, imageUrl } = req.body;
 
-    const file = req.file;
-    const fileExt = file.originalname.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    
-    const { data, error } = await supabase.storage
-      .from('manga-pics')
-      .upload(fileName, file.buffer, {
-        contentType: file.mimetype
-      });
+    const newManga = {
+      title,
+      description: description || null,
+      year: year ? Number(year) : null,
+      // ... other fields
+      image: imageUrl, // Store the full Supabase URL directly
+      genre: genre || null,
+      status: status || null
+    };
 
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('manga-pics')
-      .getPublicUrl(data.path);
-
-    res.json({ url: publicUrl });
+    const manga = await prisma.manga.create({ data: newManga });
+    res.status(201).json(manga);
   } catch (err) {
-    console.error('Upload error:', err);
-    res.status(500).json({ message: 'Image upload failed' });
+    console.error('Error creating manga:', err);
+    res.status(500).json({ message: 'Error creating manga' });
   }
 });
 
