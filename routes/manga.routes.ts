@@ -3,6 +3,21 @@ const router = express.Router();
 import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
 import prisma from '../db/index';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+  throw new Error(
+    `Supabase credentials missing! 
+     SUPABASE_URL: ${process.env.SUPABASE_URL ? 'set' : 'missing'}
+     SUPABASE_KEY: ${process.env.SUPABASE_KEY ? 'set' : 'missing'}`
+  );
+}
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!
+);
 
 // Create a new manga
 router.post(
@@ -13,19 +28,44 @@ router.post(
     console.log("Received file:", req.file);
 
     const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
-    const imageFilename = req.file?.filename;
+    let imageUrl = null;
+
+    // Handle image upload if present
+    if (req.file) {
+      const file = req.file;
+      const fileExt = file.originalname.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('manga-pics')
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype
+        });
+
+      if (error) {
+        console.error('Supabase upload error:', error);
+        res.status(500).json({ message: 'Image upload failed' });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('manga-pics')
+        .getPublicUrl(data.path);
+
+      imageUrl = publicUrl;
+    }
 
     const newManga = {
       title,
-      description,
+      description: description || null,
       year: year ? Number(year) : null,
       volumes: volumes ? Number(volumes) : null,
       chapters: chapters ? Number(chapters) : null,
-      author,
+      author: author || null,
       rating: rating ? Number(rating) : null,
-      genre,
-      status,
-      image: imageFilename ? `/uploads/${imageFilename}` : null,
+      genre: genre || null,
+      status: status || null,
+      image: imageUrl
     };
 
     try {
@@ -38,6 +78,37 @@ router.post(
     }
   }
 );
+
+// Image upload endpoint
+router.post('/mangas/upload', upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded' });
+      return;
+    }
+
+    const file = req.file;
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('manga-pics')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype
+      });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('manga-pics')
+      .getPublicUrl(data.path);
+
+    res.json({ url: publicUrl });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ message: 'Image upload failed' });
+  }
+});
 
 // Retrieve all mangas
 router.get('/mangas', async (_req: Request, res: Response) => {
@@ -74,33 +145,53 @@ router.put(
   async (req: Request, res: Response): Promise<void> => {
     const mangaId = parseInt(req.params.mangaId, 10);
 
-    // Get existing manga first to preserve existing image if no new one uploaded
-    const existingManga = await prisma.manga.findUnique({
-      where: { id: mangaId }
-    });
-
-    if (!existingManga) {
-      res.status(404).json({ message: 'Manga not found' });
-      return;
-    }
-
-    const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
-
-    const updatedManga = {
-      title,
-      description,
-      year: year ? parseInt(year) : existingManga.year,
-      volumes: volumes ? parseInt(volumes) : existingManga.volumes,
-      chapters: chapters ? parseInt(chapters) : existingManga.chapters,
-      author,
-      rating: rating ? parseInt(rating) : existingManga.rating,
-      genre,
-      status,
-      // Only update image if a new file was uploaded
-      image: req.file ? `/uploads/${req.file.filename}` : existingManga.image
-    };
-
     try {
+      const existingManga = await prisma.manga.findUnique({
+        where: { id: mangaId }
+      });
+
+      if (!existingManga) {
+        res.status(404).json({ message: 'Manga not found' });
+        return;
+      }
+
+      const { title, year, volumes, chapters, description, author, rating, status, genre } = req.body;
+      let imageUrl = existingManga.image;
+
+      // Handle new image upload if present
+      if (req.file) {
+        const file = req.file;
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        
+        const { data, error } = await supabase.storage
+          .from('manga-pics')
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype
+          });
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('manga-pics')
+          .getPublicUrl(data.path);
+
+        imageUrl = publicUrl;
+      }
+
+      const updatedManga = {
+        title: title || existingManga.title,
+        description: description || existingManga.description,
+        year: year ? parseInt(year) : existingManga.year,
+        volumes: volumes ? parseInt(volumes) : existingManga.volumes,
+        chapters: chapters ? parseInt(chapters) : existingManga.chapters,
+        author: author || existingManga.author,
+        rating: rating ? parseInt(rating) : existingManga.rating,
+        genre: genre || existingManga.genre,
+        status: status || existingManga.status,
+        image: imageUrl
+      };
+
       const manga = await prisma.manga.update({
         where: { id: mangaId },
         data: updatedManga,
